@@ -53,8 +53,9 @@ Finish time: 6:00 - 7:00 pm 4-25-2019
 Actual time needed to complete: 4 hours
 
 ----------------------------------------->
+Collaborators: Brandyn Vay, Meron Sibani, and Adriana Graybill
 
-Number and name of feature: Brandyn Vay, Meron Sibani, and Adriana Graybill
+Number and name of feature: Lab 8
 
 Estimate of time needed to complete: 3 hours
 
@@ -65,3 +66,15 @@ Finish time: 6:00pm
 Actual time needed to complete: 5 hours
 
 ----------------------------------------->
+
+Collaborators: Brandyn Vay, Meron Sibani, and Adriana Graybill
+
+Number and name of feature: Lab 9
+
+Estimate of time needed to complete: 6 hours
+
+Start time: 6:30pm on Wednesday 
+
+Finish time: 
+
+Actual time needed to complete: 
