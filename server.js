@@ -214,7 +214,7 @@ function getEvents(request, response) {
             if (!eventResults.body.events.length) { throw 'NO EVENT DATA'; }
             else {
               const eventSummaries = eventResults.body.events.map(event => {
-                let newEvent = new Event(event);
+                let newEvent = new Event(query);
                 newEvent.location_id = sqlInfo.id;
 
                 sqlInfo.columns = Object.keys(newEvent).join();
@@ -231,13 +231,41 @@ function getEvents(request, response) {
     });
 }
 
-function getMovies {
-  
+function getMovies (request, response){
+
   let sqlInfo = {
     id: request.query.data.id,
     endpoint: 'movie'
   };
 
+  getDataFromDB(sqlInfo)
+    .then(data => checkTimeouts(sqlInfo, data))
+    .then(result => {
+      if (result) { response.send(result.rows); }
+      else {
+        const url = `https://api.themoviedb.org/3/movie/76341?api_key=${THE_MOVIE_DB_API_KEY}`;
+
+        return superagent.get(url)
+          .then(movieResults => {
+            console.log('Events from API');
+            if (!movieResults.body.movie.length) { throw 'NO EVENT DATA'; }
+            else {
+              const movieSummaries = movieResults.body.movie.map(event => {
+                let newMovie = new Movie(query);
+                newMovie.location_id = sqlInfo.id;
+
+                sqlInfo.columns = Object.keys(newMovie).join();
+                sqlInfo.values = Object.values(newMovie);
+
+                saveDataToDB(sqlInfo);
+                return newMovie;
+              });
+              response.send(movieSummaries);
+            }
+          })
+          .catch(error => handleError(error, response));
+      }
+    });
 
 }
 
