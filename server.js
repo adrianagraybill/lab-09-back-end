@@ -24,6 +24,7 @@ app.get('/location', searchToLatLong);
 app.get('/weather', getWeather);
 app.get('/events', getEvents);
 app.get('/movies', getMovies);
+app.get('/yelp', getYelp);
 
 // TURN THE SERVER ON
 app.listen(PORT, () => console.log(`City Explorer Backend is up on ${PORT}`));
@@ -231,7 +232,7 @@ function getEvents(request, response) {
     });
 }
 
-function getMovies (request, response){
+function getMovies(request, response) {
 
   let sqlInfo = {
     id: request.query.data.id,
@@ -269,6 +270,49 @@ function getMovies (request, response){
 
 }
 
+function getYelp(request, response) {
+
+  let sqlInfo = {
+    id: request.query.data.id,
+    endpoint: 'yelp'
+  };
+
+  getDataFromDB(sqlInfo)
+    .then(data => checkTimeouts(sqlInfo, data))
+    .then(result => {
+
+      if (result) {
+        response.send(result.rows);
+      }
+      else {
+        const url = `https://api.yelp.com/v3/businesses/search?latitude=${request.query.data.latitude}&longitude=${request.query.data.longitude}`;
+
+        return superagent.get(url)
+          .set('Authorization', `Bearer ${process.env.YELP_API_KEY}`),
+        console.log('yelp url', url)
+          .then(yelpResults => {
+            console.log('Yelp from API');
+            if (!yelpResults.body.results.length) { throw 'NO YELP DATA'; }
+            else {
+              const yelpSummaries = yelpResults.body.yelp.map(query => {
+
+                let newYelp = new Yelp(query);
+                newYelp.location_id = sqlInfo.id;
+
+                sqlInfo.columns = Object.keys(newYelp).join();
+                sqlInfo.values = Object.values(newYelp);
+
+                saveDataToDB(sqlInfo);
+                return newYelp;
+              });
+              response.send(yelpSummaries);
+            }
+          })
+          .catch(error => handleError(error, response))
+      }
+    });
+}
+
 //DATA MODELS
 function Location(query, location) {
   this.search_query = query;
@@ -303,4 +347,11 @@ function Movie(query) {
   this.created_at = Date.now();
 }
 
-
+function Yelp(query) {
+  this.name = query.businesses.name;
+  this.image_url = query.businesses.image_url;
+  this.price = query.businesses.price;
+  this.rating = query.businesses.rating;
+  this.url = query.businesses.url;
+  this.created_at = Date.now();
+}
