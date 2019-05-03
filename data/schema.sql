@@ -2,7 +2,7 @@
 
 DROP TABLE IF EXISTS weathers;
 DROP TABLE IF EXISTS events;
-DROP TABLE IF EXISTS yelp;
+DROP TABLE IF EXISTS yelps;
 DROP TABLE IF EXISTS movies;
 DROP TABLE IF EXISTS trails;
 DROP TABLE IF EXISTS locations;
@@ -57,6 +57,7 @@ CREate TABLE yelps (
   price VARCHAR(255),
   rating VARCHAR(255),
   url VARCHAR(255),
+  created_at VARCHAR(255),
   location_id INTEGER NOT NULL,
   FOREIGN KEY (location_id) REFERENCES locations (id)
 

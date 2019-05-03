@@ -284,14 +284,16 @@ getDataFromDB(sqlInfo)
     if(result) { response.send(result.rows);}
     else {
       const url = `https://api.yelp.com/v3/businesses/search?latitude=${request.query.data.latitude}&longitude=${request.query.data.longitude}`;
+      
       console.log(url, '***************');
-      return superagent.get(url)
+      superagent(url)
       .set({'Authorization': 'Bearer '+ process.env.YELP_API_KEY})
       .then(yelpResults => {
+        console.log(yelpResults.body.businesses.length);
         console.log('Yelp from API');
-        if(!yelpResults.body.results.length) { throw 'NO YELP DATA';}
+        if(!yelpResults.body.businesses.length) { throw 'NO YELP DATA';}
         else {
-          const yelpSummaries = yelpResults.body.yelp.map(query => {
+          const yelpSummaries = yelpResults.body.businesses.map(query => {
               let newYelp = new Yelp(query);
               newYelp.location_id = sqlInfo.id;
 
@@ -348,9 +350,9 @@ function Movie(query) {
 }
 
 function Yelp(query) {
-  this.name = query.businesses.name;
-  this.image_url = query.businesses.image_url;
-  this.price = query.businesses.price;
-  this.rating = query.businesses.rating;
-  this.url = query.businesses.url;
+  this.name = query.name;
+  this.image_url = query.image_url;
+  this.price = query.price;
+  this.rating = query.rating;
+  this.url = query.url;
 }
