@@ -214,7 +214,7 @@ function getEvents(request, response) {
             if (!eventResults.body.events.length) { throw 'NO EVENT DATA'; }
             else {
               const eventSummaries = eventResults.body.events.map(event => {
-                let newEvent = new Event(query);
+                let newEvent = new Event(event);
                 newEvent.location_id = sqlInfo.id;
 
                 sqlInfo.columns = Object.keys(newEvent).join();
@@ -243,14 +243,14 @@ function getMovies (request, response){
     .then(result => {
       if (result) { response.send(result.rows); }
       else {
-        const url = `https://api.themoviedb.org/3/movie/76341?api_key=${THE_MOVIE_DB_API_KEY}`;
+        const url = `https://api.themoviedb.org/3/movie/76341?api_key=${process.env.THE_MOVIE_DB_API_KEY}`
 
         return superagent.get(url)
           .then(movieResults => {
-            console.log('Events from API');
-            if (!movieResults.body.movie.length) { throw 'NO EVENT DATA'; }
+            console.log('Movies from API');
+            if (!movieResults.body.results.length) { throw 'NO MOVIE DATA'; }
             else {
-              const movieSummaries = movieResults.body.movie.map(event => {
+              const movieSummaries = movieResults.body.movie.map(query => {
                 let newMovie = new Movie(query);
                 newMovie.location_id = sqlInfo.id;
 
@@ -284,21 +284,23 @@ function Weather(day) {
 }
 
 function Event(query) {
-  this.eventData = query.events;
+  this.event_data = query.events;
   this.link = query.url;
   this.name = query.name.text;
   this.event_date = new Date(query.start.local).toString().slice(0, 15);
+  this.created_at = Date.now();
   this.summary = query.summary;
 }
 
 function Movie(query) {
-  this.title = query.title;
-  this.overview = query.overview;
+  this.title = query.original_title;
+  this.overview = query.overview.slice(0, 750);
   this.average_votes = query.vote_average;
   this.total_votes = query.vote_count;
   this.image_url = query.poster_path;
   this.popularity = query.popularity;
-  this.released_on = query.released_date;
+  this.released_on = query.released_on;
+  this.created_at = Date.now();
 }
 
 
