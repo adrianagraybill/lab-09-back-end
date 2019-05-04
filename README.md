@@ -1,7 +1,7 @@
 # City Explorer
 
 **Author**: Brandyn Vay, Meron Sibani, and Adriana Graybill
-**Version**: 1.8.4
+**Version**: 2.0.1
 
 ## Overview
 
