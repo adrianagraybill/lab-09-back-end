@@ -237,7 +237,7 @@ function getMovies(request, response) {
     id: request.query.data.id,
     endpoint: 'movie'
   };
-  
+
   getDataFromDB(sqlInfo)
     .then(data => checkTimeouts(sqlInfo,data))
     .then(result => {
@@ -268,32 +268,31 @@ function getMovies(request, response) {
     });
 }
 
-function getYelp(request, response) {
-
+function getYelp(request, response){
+  console.log('hello');
   let sqlInfo = {
-    id: request.query.data.id,
+
+    id:request.query.data.id,
     endpoint: 'yelp'
   };
 
+
   getDataFromDB(sqlInfo)
     .then(data => checkTimeouts(sqlInfo, data))
-    .then(result => {
-
-      if (result) {
-        response.send(result.rows);
-      }
+    .then(result =>{
+      if(result) { response.send(result.rows);}
       else {
         const url = `https://api.yelp.com/v3/businesses/search?latitude=${request.query.data.latitude}&longitude=${request.query.data.longitude}`;
 
-        return superagent.get(url)
-          .set('Authorization', `Bearer ${process.env.YELP_API_KEY}`),
-        console.log('yelp url', url)
+        console.log(url, '***************');
+        superagent(url)
+          .set({'Authorization': 'Bearer '+ process.env.YELP_API_KEY})
           .then(yelpResults => {
+            console.log(yelpResults.body.businesses.length);
             console.log('Yelp from API');
-            if (!yelpResults.body.results.length) { throw 'NO YELP DATA'; }
+            if(!yelpResults.body.businesses.length) { throw 'NO YELP DATA';}
             else {
-              const yelpSummaries = yelpResults.body.yelp.map(query => {
-
+              const yelpSummaries = yelpResults.body.businesses.map(query => {
                 let newYelp = new Yelp(query);
                 newYelp.location_id = sqlInfo.id;
 
@@ -303,59 +302,15 @@ function getYelp(request, response) {
                 saveDataToDB(sqlInfo);
                 return newYelp;
               });
+              console.log()
               response.send(yelpSummaries);
             }
           })
-          .catch(error => handleError(error, response))
+
+          .catch(error => handleError(error, response));
       }
     });
-
 }
-
-function getYelp(request, response){
-    console.log('hello');
-  let sqlInfo = {
-  
-      id:request.query.data.id,
-      endpoint: 'yelp'
-    };
-
-
-getDataFromDB(sqlInfo)
-  .then(data => checkTimeouts(sqlInfo, data))
-  .then(result =>{
-    if(result) { response.send(result.rows);}
-    else {
-      const url = `https://api.yelp.com/v3/businesses/search?latitude=${request.query.data.latitude}&longitude=${request.query.data.longitude}`;
-      
-      console.log(url, '***************');
-      superagent(url)
-      .set({'Authorization': 'Bearer '+ process.env.YELP_API_KEY})
-      .then(yelpResults => {
-        console.log(yelpResults.body.businesses.length);
-        console.log('Yelp from API');
-        if(!yelpResults.body.businesses.length) { throw 'NO YELP DATA';}
-        else {
-          const yelpSummaries = yelpResults.body.businesses.map(query => {
-              let newYelp = new Yelp(query);
-              newYelp.location_id = sqlInfo.id;
-
-              sqlInfo.columns = Object.keys(newYelp).join();
-              sqlInfo.values = Object.values(newYelp);
-
-              saveDataToDB(sqlInfo);
-              return newYelp;
-            });
-              console.log()
-            response.send(yelpSummaries);
-          }
-        })
-      
-      .catch(error => handleError(error, response));
-      }
-    });
-  
-  }
 
 
 //DATA MODELS
