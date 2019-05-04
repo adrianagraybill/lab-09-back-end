@@ -23,7 +23,7 @@ client.on('error', err => console.log(err));
 app.get('/location', searchToLatLong);
 app.get('/weather', getWeather);
 app.get('/events', getEvents);
-//app.get('/movies', getMovies);
+app.get('/movies', getMovies);
 app.get('/yelp', getYelp);
 
 // TURN THE SERVER ON
@@ -238,35 +238,79 @@ function getMovies(request, response) {
     id: request.query.data.id,
     endpoint: 'movie'
   };
-
+  
   getDataFromDB(sqlInfo)
-    .then(data => checkTimeouts(sqlInfo, data))
+    .then(data => checkTimeouts(sqlInfo,data))
     .then(result => {
-      if (result) { response.send(result.rows); }
+      console.log('Hi there')
+      if (result) {response.send(result.rows);}
       else {
-        const url = `https://api.themoviedb.org/3/movie/76341?api_key=${process.env.THE_MOVIE_DB_API_KEY}`
-
+        const url = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.THE_MOVIE_DB_API_KEY}&query=${request.query.data.formatted_query.split(',')[0]}`;
+        console.log(request.query.data.formatted_query);
         return superagent.get(url)
           .then(movieResults => {
-            console.log('Movies from API');
-            if (!movieResults.body.results.length) { throw 'NO MOVIE DATA'; }
+            if (!movieResults.body.results.length) { throw 'NO DATA'; }
             else {
-              const movieSummaries = movieResults.body.movie.map(query => {
-                let newMovie = new Movie(query);
-                newMovie.location_id = sqlInfo.id;
+              const movieSummaries = movieResults.body.results.map( movie => {
+                let summary = new Movie(movie);
 
-                sqlInfo.columns = Object.keys(newMovie).join();
-                sqlInfo.values = Object.values(newMovie);
+                summary.location_id = sqlInfo.id;
+                sqlInfo.columns = Object.keys(summary).join();
+                sqlInfo.values = Object.values(summary);
 
                 saveDataToDB(sqlInfo);
-                return newMovie;
+                return summary;
               });
               response.send(movieSummaries);
             }
           })
-          .catch(error => handleError(error, response));
+          .catch(err => handleError(err, response));
       }
     });
+}
+
+function getYelp(request, response) {
+
+  let sqlInfo = {
+    id: request.query.data.id,
+    endpoint: 'yelp'
+  };
+
+  getDataFromDB(sqlInfo)
+    .then(data => checkTimeouts(sqlInfo, data))
+    .then(result => {
+
+      if (result) {
+        response.send(result.rows);
+      }
+      else {
+        const url = `https://api.yelp.com/v3/businesses/search?latitude=${request.query.data.latitude}&longitude=${request.query.data.longitude}`;
+
+        return superagent.get(url)
+          .set('Authorization', `Bearer ${process.env.YELP_API_KEY}`),
+        console.log('yelp url', url)
+          .then(yelpResults => {
+            console.log('Yelp from API');
+            if (!yelpResults.body.results.length) { throw 'NO YELP DATA'; }
+            else {
+              const yelpSummaries = yelpResults.body.yelp.map(query => {
+
+                let newYelp = new Yelp(query);
+                newYelp.location_id = sqlInfo.id;
+
+                sqlInfo.columns = Object.keys(newYelp).join();
+                sqlInfo.values = Object.values(newYelp);
+
+                saveDataToDB(sqlInfo);
+                return newYelp;
+              });
+              response.send(yelpSummaries);
+            }
+          })
+          .catch(error => handleError(error, response))
+      }
+    });
+
 }
 
 function getYelp(request, response) {
@@ -338,10 +382,10 @@ function Event(query) {
 
 function Movie(query) {
   this.title = query.original_title;
-  this.overview = query.overview.slice(0, 750);
+  this.overview = query.overview;
   this.average_votes = query.vote_average;
   this.total_votes = query.vote_count;
-  this.image_url = query.poster_path;
+  this.image_url = `https://image.tmdb.org/t/p/original/${query.poster_path}`;
   this.popularity = query.popularity;
   this.released_on = query.released_on;
   this.created_at = Date.now();
@@ -353,4 +397,5 @@ function Yelp(query) {
   this.price = query.price;
   this.rating = query.rating;
   this.url = query.url;
+  this.created_at = Date.now();
 }
