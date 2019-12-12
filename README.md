@@ -1,4 +1,4 @@
-# City Explorer
+# City Explorer - Introduction to APIs and Relational Databases
 
 **Author**: Brandyn Vay, Meron Sibani, and Adriana Graybill
 **Version**: 2.0.1
